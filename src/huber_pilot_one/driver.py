@@ -116,8 +116,8 @@ class PilotOne:
         # raw: u16 from Modbus
         value = raw if raw < 0x8000 else raw - 0x10000
         return value * 0.01
-    
-    
+
+
     @staticmethod
     def encode_temp(temp_c: float) -> int:
         value = int(round(temp_c / 0.01))
@@ -125,194 +125,139 @@ class PilotOne:
             raise ValueError("Temperature out of range for int16")
         return value & 0xFFFF
 
-    async def get_temp_setpoint(self) -> float:
-        """Temp setpoint in C"""
+
+    def require_client(self) -> AsyncModbusTcpClient:
         if self._client:
-            result = await self._client.read_holding_registers(Registers.TEMP_SETPOINT + self._offset, count=1)
-            return self.decode_temp(result.registers[0])
-        raise RuntimeError("Client not Initialized")
+            return self._client
+        raise RuntimeError("Client not Connected")
+
+
+    async def get_temp_setpoint(self) -> float:
+        client = self.require_client()
+        result = await client.read_holding_registers(Registers.TEMP_SETPOINT + self._offset, count=1)
+        return self.decode_temp(result.registers[0])
 
     async def set_temp_setpoint(self, temp: float) -> None:
-        """Temp setpoint in C"""
-        if self._client:
-            await self._client.write_register(Registers.TEMP_SETPOINT + self._offset, self.encode_temp(temp))
-            return None
-        raise RuntimeError("Client not Initialized")
+        client = self.require_client()
+        await client.write_register(Registers.TEMP_SETPOINT + self._offset, self.encode_temp(temp))
 
 
     async def get_internal_temp(self) -> float:
-        """Temp setpoint in C"""
-        if self._client:
-            result = await self._client.read_holding_registers(Registers.INTERNAL_TEMP + self._offset, count=1)
-            return self.decode_temp(result.registers[0])
-        raise RuntimeError("Client not Initialized")
+        client = self.require_client()
+        result = await client.read_holding_registers(Registers.INTERNAL_TEMP + self._offset, count=1)
+        return self.decode_temp(result.registers[0])
 
     async def get_return_temp(self) -> float:
-        """Temp setpoint in C"""
-        if self._client:
-            result = await self._client.read_holding_registers(Registers.RETURN_TEMP + self._offset, count=1)
-            return self.decode_temp(result.registers[0])
-        raise RuntimeError("Client not Initialized")
+        client = self.require_client()
+        result = await client.read_holding_registers(Registers.RETURN_TEMP + self._offset, count=1)
+        return self.decode_temp(result.registers[0])
 
     async def get_pump_pressure(self) -> float:
-        """Pump pressure in bar"""
-        if self._client:
-            result = await self._client.read_holding_registers(Registers.PUMP_PRESSURE + self._offset, count=1)
-            return self.decode_pressure(result.registers[0])
-        raise RuntimeError("Client not Initialized")
+        client = self.require_client()
+        result = await client.read_holding_registers(Registers.PUMP_PRESSURE + self._offset, count=1)
+        return self.decode_pressure(result.registers[0])
 
     async def get_power(self) -> float:
-        """Power in W"""
-        if self._client:
-            result = await self._client.read_holding_registers(Registers.POWER + self._offset, count=1)
-            return u16_to_i16(result.registers[0])  
-        raise RuntimeError("Client not Initialized")
+        client = self.require_client()
+        result = await client.read_holding_registers(Registers.POWER + self._offset, count=1)
+        return u16_to_i16(result.registers[0])
 
     async def get_error(self) -> Optional[int]:
-        """Error in error code"""
-        if self._client:
-            result = await self._client.read_holding_registers(Registers.ERROR + self._offset, count=1)
-            return u16_to_i16(result.registers[0]) if result.registers[0] != 0 else None
-        raise RuntimeError("Client not Initialized")
+        client = self.require_client()
+        result = await client.read_holding_registers(Registers.ERROR + self._offset, count=1)
+        return u16_to_i16(result.registers[0]) if result.registers[0] != 0 else None
 
     async def clear_error(self) -> None:
-        """Clear error"""
-        if self._client:
-            await self._client.write_register(Registers.ERROR + self._offset, i16_to_u16(1))
-            return None
-        raise RuntimeError("Client not Initialized")
+        client = self.require_client()
+        await client.write_register(Registers.ERROR + self._offset, i16_to_u16(1))
 
     async def get_warning(self) -> Optional[int]:
-        """Warning in warning code"""
-        if self._client:
-            result = await self._client.read_holding_registers(Registers.WARNING + self._offset, count=1)
-            return u16_to_i16(result.registers[0]) if result.registers[0] != 0 else None
-        raise RuntimeError("Client not Initialized")
-    
+        client = self.require_client()
+        result = await client.read_holding_registers(Registers.WARNING + self._offset, count=1)
+        return u16_to_i16(result.registers[0]) if result.registers[0] != 0 else None
+
     async def clear_warning(self) -> None:
-        """Clear warning"""
-        if self._client:
-            await self._client.write_register(Registers.WARNING + self._offset, i16_to_u16(1))
-            return None
-        raise RuntimeError("Client not Initialized")
+        client = self.require_client()
+        await client.write_register(Registers.WARNING + self._offset, i16_to_u16(1))
 
     async def get_process_temperature(self) -> float:
-        """Process temperature in C"""
-        if self._client:
-            result = await self._client.read_holding_registers(Registers.PROCESS_TEMPERATURE + self._offset, count=1)
-            return self.decode_temp(result.registers[0])
-        raise RuntimeError("Client not Initialized")
+        client = self.require_client()
+        result = await client.read_holding_registers(Registers.PROCESS_TEMPERATURE + self._offset, count=1)
+        return self.decode_temp(result.registers[0])
 
     async def get_actual_value_internal_temp(self) -> float:
-        """Actual value internal temperature in C"""
-        if self._client:
-            result = await self._client.read_holding_registers(Registers.ACTUAL_VALUE_INTERNAL_TEMP + self._offset, count=1)
-            return self.decode_temp(result.registers[0])
-        raise RuntimeError("Client not Initialized")
+        client = self.require_client()
+        result = await client.read_holding_registers(Registers.ACTUAL_VALUE_INTERNAL_TEMP + self._offset, count=1)
+        return self.decode_temp(result.registers[0])
 
     async def get_process_temp_setting(self) -> float:
-        """Process temperature setting in C"""
-        if self._client:
-            result = await self._client.read_holding_registers(Registers.PROCESS_TEMP_SETTING + self._offset, count=1)
-            return self.decode_temp(result.registers[0])
-        raise RuntimeError("Client not Initialized")
+        client = self.require_client()
+        result = await client.read_holding_registers(Registers.PROCESS_TEMP_SETTING + self._offset, count=1)
+        return self.decode_temp(result.registers[0])
 
     async def set_process_temp_setting(self, temp: float) -> None:
-        """Process temperature setting in C"""
-        if self._client:
-            await self._client.write_register(Registers.PROCESS_TEMP_SETTING + self._offset, self.encode_temp(temp))
-            return None
-        raise RuntimeError("Client not Initialized")
+        client = self.require_client()
+        await client.write_register(Registers.PROCESS_TEMP_SETTING + self._offset, self.encode_temp(temp))
 
     async def get_thermostat_status(self) -> ThermostatStatus:
-        """Thermostat status"""
-        if self._client:
-            result = await self._client.read_holding_registers(Registers.THERMOSTAT_STATUS + self._offset, count=1)
-            return ThermostatStatus(raw=result.registers[0])
-        raise RuntimeError("Client not Initialized")
+        client = self.require_client()
+        result = await client.read_holding_registers(Registers.THERMOSTAT_STATUS + self._offset, count=1)
+        return ThermostatStatus(raw=result.registers[0])
 
     async def get_fill_value(self) -> float:
-        """Fill value in C"""
-        if self._client:
-            result = await self._client.read_holding_registers(Registers.FILL_VALUE + self._offset, count=1)
-            return u16_to_i16(result.registers[0])/1000.0
-        raise RuntimeError("Client not Initialized")
+        client = self.require_client()
+        result = await client.read_holding_registers(Registers.FILL_VALUE + self._offset, count=1)
+        return u16_to_i16(result.registers[0])/1000.0
 
     async def get_auto_pid(self) -> bool:
-        """Auto PID"""
-        if self._client:
-            result = await self._client.read_holding_registers(Registers.AUTO_PID + self._offset, count=1)
-            return result.registers[0] != 0
-        raise RuntimeError("Client not Initialized")
+        client = self.require_client()
+        result = await client.read_holding_registers(Registers.AUTO_PID + self._offset, count=1)
+        return result.registers[0] != 0
 
     async def set_auto_pid(self, auto_pid: bool) -> None:
-        """Auto PID"""
-        if self._client:
-            await self._client.write_register(Registers.AUTO_PID + self._offset, 1 if auto_pid else 0)
-            return None
-        raise RuntimeError("Client not Initialized")
+        client = self.require_client()
+        await client.write_register(Registers.AUTO_PID + self._offset, 1 if auto_pid else 0)
 
     async def get_temp_mode(self) -> bool:
-        """Temp mode"""
-        if self._client:
-            result = await self._client.read_holding_registers(Registers.TEMP_MODE + self._offset, count=1)
-            return result.registers[0] != 0
-        raise RuntimeError("Client not Initialized")
+        client = self.require_client()
+        result = await client.read_holding_registers(Registers.TEMP_MODE + self._offset, count=1)
+        return result.registers[0] != 0
 
     async def set_temp_mode(self, temp_mode: TempControlMode) -> None:
-        """Temp mode"""
-        if self._client:
-            await self._client.write_register(Registers.TEMP_MODE + self._offset, temp_mode.value)
-            return None
-        raise RuntimeError("Client not Initialized")
-    
+        client = self.require_client()
+        await client.write_register(Registers.TEMP_MODE + self._offset, temp_mode.value)
+
     async def get_temp_active(self) -> bool:
-        """Temp active"""
-        if self._client:
-            result = await self._client.read_holding_registers(Registers.TEMP_ACTIVE + self._offset, count=1)
-            return result.registers[0] != 0
-        raise RuntimeError("Client not Initialized")
-    
+        client = self.require_client()
+        result = await client.read_holding_registers(Registers.TEMP_ACTIVE + self._offset, count=1)
+        return result.registers[0] != 0
+
     async def set_temp_active(self, temp_active: bool) -> None:
-        """Temp active"""
-        if self._client:
-            await self._client.write_register(Registers.TEMP_ACTIVE + self._offset, 1 if temp_active else 0)
-            return None
-        raise RuntimeError("Client not Initialized")
-    
+        client = self.require_client()
+        await client.write_register(Registers.TEMP_ACTIVE + self._offset, 1 if temp_active else 0)
+
     async def get_compressor_mode(self) -> CompressorMode:
-        """Compressor mode"""
-        if self._client:
-            result = await self._client.read_holding_registers(Registers.COMPRESSOR_MODE + self._offset, count=1)
-            value = result.registers[0]
-            if value == 0:
-                return CompressorMode.AUTOMATIC
-            elif value == 1:
-                return CompressorMode.ALWAYS_ON
-            elif value == 2:
-                return CompressorMode.ALWAYS_OFF
-            else:
-                raise ValueError("Invalid compressor mode")
-        raise RuntimeError("Client not Initialized")
+        client = self.require_client()
+        result = await client.read_holding_registers(Registers.COMPRESSOR_MODE + self._offset, count=1)
+        value = result.registers[0]
+        if value == 0:
+            return CompressorMode.AUTOMATIC
+        elif value == 1:
+            return CompressorMode.ALWAYS_ON
+        elif value == 2:
+            return CompressorMode.ALWAYS_OFF
+        else:
+            raise ValueError("Invalid compressor mode")
 
     async def set_compressor_mode(self, compressor_mode: CompressorMode) -> None:
-        """Compressor mode"""
-        if self._client:
-            await self._client.write_register(Registers.COMPRESSOR_MODE + self._offset, compressor_mode.value)
-            return None
-        raise RuntimeError("Client not Initialized")
+        client = self.require_client()
+        await client.write_register(Registers.COMPRESSOR_MODE + self._offset, compressor_mode.value)
 
     async def get_circulation_active(self) -> bool:
-        """Circulation active"""
-        if self._client:
-            result = await self._client.read_holding_registers(Registers.CIRCULATION_ACTIVE + self._offset, count=1)
-            return result.registers[0] != 0
-        raise RuntimeError("Client not Initialized")
-    
+        client = self.require_client()
+        result = await client.read_holding_registers(Registers.CIRCULATION_ACTIVE + self._offset, count=1)
+        return result.registers[0] != 0
+
     async def set_circulation_active(self, circulation_active: bool) -> None:
-        """Circulation active"""
-        if self._client:
-            await self._client.write_register(Registers.CIRCULATION_ACTIVE + self._offset, 1 if circulation_active else 0)
-            return None
-        raise RuntimeError("Client not Initialized")
-    
+        client = self.require_client()
+        await client.write_register(Registers.CIRCULATION_ACTIVE + self._offset, 1 if circulation_active else 0)
